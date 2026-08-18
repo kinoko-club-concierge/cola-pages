@@ -788,22 +788,29 @@ async function generatePDF(signDate, sigDataUrl, stampDataUrl, signerName) {
     });
   }
 
-  // Add Party B signer name and date as text
-  var font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-  // Name next to 代表人 label
-  lastPage.drawText(signerName, {
-    x: 120,
-    y: 710,
-    size: 11,
-    font: font
-  });
-  // Date next to 日期 label
-  lastPage.drawText(signDate, {
-    x: 100,
-    y: 580,
-    size: 11,
-    font: font
-  });
+  // Render signer name as image (pdf-lib StandardFonts can't handle CJK)
+  var nameCanvas = document.createElement('canvas');
+  nameCanvas.width = 200;
+  nameCanvas.height = 40;
+  var nameCtx = nameCanvas.getContext('2d');
+  nameCtx.fillStyle = '#000';
+  nameCtx.font = '22px "Noto Sans SC", sans-serif';
+  nameCtx.fillText(signerName, 10, 28);
+  var nameBytes = Uint8Array.from(atob(nameCanvas.toDataURL('image/png').split(',')[1]), function(c) { return c.charCodeAt(0); });
+  var nameImage = await pdfDoc.embedPng(nameBytes);
+  lastPage.drawImage(nameImage, { x: 110, y: 700, width: 100, height: 22 });
+
+  // Render date as image
+  var dateCanvas = document.createElement('canvas');
+  dateCanvas.width = 240;
+  dateCanvas.height = 40;
+  var dateCtx = dateCanvas.getContext('2d');
+  dateCtx.fillStyle = '#000';
+  dateCtx.font = '20px "Noto Sans SC", sans-serif';
+  dateCtx.fillText(signDate, 10, 28);
+  var dateBytes = Uint8Array.from(atob(dateCanvas.toDataURL('image/png').split(',')[1]), function(c) { return c.charCodeAt(0); });
+  var dateImage = await pdfDoc.embedPng(dateBytes);
+  lastPage.drawImage(dateImage, { x: 95, y: 575, width: 120, height: 20 });
 
   var pdfBytes = await pdfDoc.save();
   return pdfBytes;
