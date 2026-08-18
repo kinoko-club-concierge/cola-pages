@@ -7,8 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 <style>
 :root {
@@ -792,80 +791,71 @@ function getContractText() {
   ];
 }
 
-async function generatePDF(signDate, sigDataUrl, stampUrl, signerName) {
-  if (!window.jspdf || !window.jspdf.jsPDF) { throw new Error('PDF库加载失败，请刷新页面后重试'); }
-  var jsPDF = window.jspdf.jsPDF;
+async function generatePDF(signDate, sigDataUrl, stampDataUrl, signerName) {
+  var PDFLib = window.PDFLib;
+  if (!PDFLib) { throw new Error('PDF库加载失败，请刷新页面后重试'); }
 
-  // Temporarily expand contract-content to full height for screenshot
-  var contractEl = document.getElementById('contract-content');
-  var origMaxH = contractEl.style.maxHeight;
-  var origOverflow = contractEl.style.overflow;
-  contractEl.style.maxHeight = 'none';
-  contractEl.style.overflow = 'visible';
+  // Load template PDF from server
+  var templateUrl = 'https://kinoko-club-concierge.github.io/cola-pages/asian-games-driver-contract/contract-template.pdf';
+  var templateBytes = await fetch(templateUrl).then(function(r) { return r.arrayBuffer(); });
+  var pdfDoc = await PDFLib.PDFDocument.load(templateBytes);
 
-  // Scroll to top of contract
-  contractEl.scrollTop = 0;
-  await new Promise(function(r) { setTimeout(r, 300); });
+  // Get the last page (signing page)
+  var pages = pdfDoc.getPages();
+  var lastPage = pages[pages.length - 1];
+  var pageHeight = lastPage.getHeight();
 
-  // Screenshot the actual rendered contract element
-  var canvas = await html2canvas(contractEl, {
-    scale: 2,
-    useCORS: true,
-    allowTaint: true,
-    logging: false,
-    backgroundColor: '#ffffff',
-    windowWidth: 800,
-    width: contractEl.scrollWidth,
-    height: contractEl.scrollHeight
+  // Embed Party B signature image
+  if (sigDataUrl) {
+    var sigBytes = Uint8Array.from(atob(sigDataUrl.split(',')[1]), function(c) { return c.charCodeAt(0); });
+    var sigImage = await pdfDoc.embedPng(sigBytes);
+    var sigDims = sigImage.scale(0.35);
+    // Position: Party B signature area (right column, below 乙方 header)
+    lastPage.drawImage(sigImage, {
+      x: 320,
+      y: pageHeight - 480,
+      width: Math.min(sigDims.width, 150),
+      height: Math.min(sigDims.height, 60)
+    });
+  }
+
+  // Embed Party B stamp image
+  if (stampDataUrl) {
+    var stampBytes = Uint8Array.from(atob(stampDataUrl.split(',')[1]), function(c) { return c.charCodeAt(0); });
+    var stampImage;
+    if (stampDataUrl.indexOf('image/png') > -1) {
+      stampImage = await pdfDoc.embedPng(stampBytes);
+    } else {
+      stampImage = await pdfDoc.embedJpg(stampBytes);
+    }
+    // Position: Party B stamp area
+    lastPage.drawImage(stampImage, {
+      x: 340,
+      y: pageHeight - 570,
+      width: 70,
+      height: 70
+    });
+  }
+
+  // Add Party B signer name and date as text
+  var font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+  // Name
+  lastPage.drawText(signerName, {
+    x: 370,
+    y: pageHeight - 410,
+    size: 11,
+    font: font
+  });
+  // Date
+  lastPage.drawText(signDate, {
+    x: 370,
+    y: pageHeight - 610,
+    size: 11,
+    font: font
   });
 
-  // Restore scroll container
-  contractEl.style.maxHeight = origMaxH;
-  contractEl.style.overflow = origOverflow;
-
-  var doc = new jsPDF('p', 'mm', 'a4');
-  var pageW = 210, pageH = 297, margin = 10;
-  var contentW = pageW - margin * 2;
-  var contentH = pageH - margin * 2;
-  var imgW = canvas.width, imgH = canvas.height;
-  var ratio = contentW / (imgW / 2);
-  var totalH = (imgH / 2) * ratio;
-  var pages = Math.ceil(totalH / contentH);
-
-  for (var p = 0; p < pages; p++) {
-    if (p > 0) doc.addPage();
-    var srcY = Math.round(p * contentH / ratio * 2);
-    var srcH = Math.min(Math.round(contentH / ratio * 2), imgH - srcY);
-    var tempCanvas = document.createElement('canvas');
-    tempCanvas.width = imgW;
-    tempCanvas.height = srcH;
-    var ctx = tempCanvas.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, imgW, srcH);
-    ctx.drawImage(canvas, 0, srcY, imgW, srcH, 0, 0, imgW, srcH);
-    var sliceData = tempCanvas.toDataURL('image/jpeg', 0.82);
-    var sliceH = (srcH / 2) * ratio;
-    doc.addImage(sliceData, 'JPEG', margin, margin, contentW, sliceH);
-  }
-
-  // Signature page - screenshot the sign section directly
-  var signSection = document.querySelector('.sign-section');
-  if (signSection) {
-    doc.addPage();
-    var sigCanvas = await html2canvas(signSection, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      logging: false,
-      backgroundColor: '#ffffff'
-    });
-    var sigImgData = sigCanvas.toDataURL('image/jpeg', 0.82);
-    var sigRatio = contentW / (sigCanvas.width / 2);
-    var sigH = (sigCanvas.height / 2) * sigRatio;
-    doc.addImage(sigImgData, 'JPEG', margin, margin, contentW, Math.min(sigH, contentH));
-  }
-
-  return doc;
+  var pdfBytes = await pdfDoc.save();
+  return pdfBytes;
 }
 
 async function sendEmail(pdfBase64, signDate, signerName, signerEmail) {
@@ -901,10 +891,16 @@ async function submitForm() {
     var signDate = document.getElementById('sign-date-text').textContent;
     var sigDataUrl = signaturePad.toDataURL('image/png');
 
-    // Generate PDF
-    var doc = await generatePDF(signDate, sigDataUrl, stampDataUrl, signerName);
-    var pdfBlob = doc.output('blob');
-    var pdfBase64 = doc.output('datauristring').split(',')[1];
+    // Generate PDF using pdf-lib (overlay on template)
+    var pdfBytes = await generatePDF(signDate, sigDataUrl, stampDataUrl, signerName);
+    var pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+    var pdfBase64 = '';
+    var bytes = new Uint8Array(pdfBytes);
+    var chunkSize = 8192;
+    for (var i = 0; i < bytes.length; i += chunkSize) {
+      pdfBase64 += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+    }
+    pdfBase64 = btoa(pdfBase64);
 
     // Send email
     document.getElementById('loading-text').textContent = '邮件发送中...';
