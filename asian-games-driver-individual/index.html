@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>专属司机服务协议签约 | Kinoko Club Concierge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+<style>
+:root {
+  --color-primary: #8B6914;
+  --color-primary-dark: #6B5010;
+  --color-text: #333333;
+  --color-bg: #FAF8F5;
+  --color-accent: #B89B5E;
+  --color-border: #E8E0D4;
+  --color-error: #c0392b;
+  --color-success: #27ae60;
+  --font-heading: 'Noto Serif SC', serif;
+  --font-body: 'Noto Sans SC', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.8;
+  font-size: 15px;
+  min-height: 100vh;
+}
+.top-bar {
+  position: sticky; top: 0; z-index: 1000;
+  background: rgba(255,255,255,0.97);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+  padding: 10px 20px;
+  text-align: center;
+  display: flex; align-items: center; justify-content: center;
+}
+.top-bar .logo { width: 120px; height: auto; }
+.header {
+  text-align: center;
+  padding: 36px 20px 28px;
+  border-bottom: 1px solid var(--color-border);
+}
+.header h2 {
+  font-family: var(--font-heading);
+  font-weight: 600; font-size: 1.4rem;
+  color: var(--color-primary);
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.header p { font-size: 0.88rem; color: #7a6f6a; font-weight: 300; }
+.step-indicator {
+  display: flex; justify-content: center; align-items: center;
+  padding: 20px 20px 12px;
+}
+.step-dot {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.82rem; font-weight: 500; transition: all 0.3s;
+}
+.step-dot.active { background: var(--color-primary); color: #fff; }
+.step-dot.completed { background: var(--color-success); color: #fff; }
+.step-dot.inactive { background: var(--color-border); color: #999; }
+.step-line { width: 50px; height: 2px; background: var(--color-border); }
+.container { max-width: 750px; margin: 0 auto; padding: 0 16px 60px; }
+.card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  padding: 28px 24px;
+  margin-top: 16px;
+  border: 1px solid var(--color-border);
+}
+@media(max-width: 640px) { .card { padding: 22px 16px; } }
+.section-title {
+  font-family: var(--font-heading);
+  font-weight: 600; font-size: 1.05rem;
+  color: var(--color-primary);
+  margin: 24px 0 14px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-border);
+}
+.section-title:first-child { margin-top: 0; }
+.contract-paper {
+  background: #fff;
+  border: 1px solid #d4c9b8;
+  border-radius: 4px;
+  padding: 28px 24px;
+  margin: 16px 0;
+  max-height: 60vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  font-size: 0.88rem;
+  line-height: 1.9;
+}
+@media(max-width: 640px) { .contract-paper { padding: 20px 14px; font-size: 0.84rem; max-height: 55vh; } }
+.contract-paper h3 {
+  text-align: center;
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+  color: var(--color-primary-dark);
+}
+.contract-paper .party-info {
+  background: #fafaf9;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 12px 0;
+  font-size: 0.85rem;
+}
+.contract-paper .party-info strong { color: var(--color-primary-dark); }
+.contract-paper .article-title {
+  font-weight: 700;
+  margin-top: 20px;
+  margin-bottom: 6px;
+  color: var(--color-primary-dark);
+  font-size: 0.92rem;
+}
+.contract-paper .article-content { margin-left: 0; }
+.contract-paper .article-content p { margin: 4px 0; }
+.contract-paper .sub-title {
+  font-weight: 700;
+  margin-top: 14px;
+  margin-bottom: 4px;
+}
+.contract-paper .sign-block {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+label.field-label {
+  display: block; font-size: 0.85rem;
+  font-weight: 500; margin-bottom: 6px; color: var(--color-text);
+}
+.required { color: var(--color-error); }
+.btn-primary {
+  background: var(--color-primary); color: #fff; border: none;
+  padding: 14px 28px; border-radius: 8px;
+  font-size: 1rem; font-weight: 500;
+  font-family: var(--font-body); cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s; width: 100%;
+}
+.btn-primary:hover { opacity: 0.9; }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-secondary {
+  background: transparent; color: var(--color-text);
+  border: 1px solid var(--color-border);
+  padding: 14px 20px; border-radius: 8px;
+  font-size: 0.95rem; font-family: var(--font-body); cursor: pointer;
+}
+.btn-secondary:hover { background: #f5f2ef; }
+.btn-row { display: flex; gap: 12px; margin-top: 24px; }
+.btn-row .btn-primary { flex: 1; }
+.agree-row {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 14px;
+  background: #fefdfb; border: 1px solid var(--color-border);
+  border-radius: 8px; margin: 16px 0 8px;
+}
+.agree-row input { width: 18px; height: 18px; accent-color: var(--color-primary); margin-top: 3px; flex-shrink: 0; }
+.agree-row label { font-size: 0.9rem; cursor: pointer; }
+.sig-wrapper {
+  position: relative;
+  width: 100%; height: 180px;
+  border: 2px dashed var(--color-border);
+  border-radius: 8px; background: #fff; overflow: hidden;
+}
+.sig-wrapper canvas {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%;
+  touch-action: none; cursor: crosshair;
+}
+.sig-clear {
+  font-size: 0.8rem; color: #999;
+  border: 1px solid var(--color-border);
+  background: transparent; padding: 6px 12px;
+  border-radius: 6px; cursor: pointer; margin-top: 8px;
+}
+.sig-clear:hover { background: #f5f2ef; }
+.sign-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 16px;
+}
+@media(max-width: 640px) { .sign-section { grid-template-columns: 1fr; } }
+.sign-party {
+  padding: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: #fafaf9;
+}
+.sign-party h4 {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  color: var(--color-primary-dark);
+  margin-bottom: 4px;
+}
+.sign-party .party-name {
+  font-size: 0.82rem;
+  color: #7a6f6a;
+  margin-bottom: 14px;
+}
+.sign-date-display {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 10px;
+}
+.success-card { text-align: center; padding: 40px 24px; }
+.success-icon {
+  width: 60px; height: 60px;
+  background: var(--color-success); color: #fff;
+  border-radius: 50%; display: flex;
+  align-items: center; justify-content: center;
+  font-size: 1.8rem; margin: 0 auto 16px;
+}
+.success-card h3 {
+  font-family: var(--font-heading);
+  font-size: 1.2rem; color: var(--color-primary); margin-bottom: 10px;
+}
+.success-card p { font-size: 0.9rem; color: #7a6f6a; line-height: 1.7; }
+.hidden { display: none !important; }
+.site-footer {
+  margin-top: 40px; padding: 24px 20px;
+  text-align: center; border-top: 1px solid var(--color-border);
+}
+.site-footer .footer-info { font-size: 0.75rem; color: #7a6f6a; line-height: 2; }
+.site-footer .footer-info a { color: var(--color-primary); text-decoration: none; }
+.site-footer .footer-copy { font-size: 0.7rem; color: #aaa; margin-top: 8px; }
+.loading-overlay {
+  position: fixed; inset: 0; background: rgba(255,255,255,0.85);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9999; flex-direction: column; gap: 12px;
+}
+.loading-overlay .spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-overlay p { font-size: 0.9rem; color: #666; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <img src="https://raw.githubusercontent.com/kinoko-club-concierge/flowchart/gh-pages/logo.png" alt="Kinoko Club Concierge" class="logo">
+</div>
+
+<div class="header">
+  <h2>专属司机服务协议</h2>
+  <p>2026名古屋亚洲运动会 ｜ 个人签署</p>
+</div>
+
+<div class="step-indicator">
+  <div class="step-dot active" id="sd1">1</div>
+  <div class="step-line"></div>
+  <div class="step-dot inactive" id="sd2">2</div>
+</div>
+
+<div class="container">
+
+<!-- Step 1: 合同阅读 -->
+<div id="step-1" class="card">
+  <h3 class="section-title" style="margin-top:0">合同全文确认</h3>
+  <p style="font-size:0.85rem;color:#7a6f6a;margin-bottom:12px">请仔细阅读以下合同全部条款，确认无误后进行签约。</p>
+
+  <div class="contract-paper" id="contract-content">
+    <h3>2026年名古屋亚洲运动会中央电视台（CCTV）<br>报道团队专属司机服务协议</h3>
+
+    <div class="party-info">
+      <strong>甲方：</strong>木の子交通株式会社（Kinoko Club Concierge）<br>
+      地址：〒104-0045 東京都中央区築地１丁目１３−１０ サクセス銀座東ビル 6F<br>
+      法定代表人：李 嘉琦
+    </div>
+
+    <div class="party-info">
+      <strong>乙方（司机）：</strong>＿＿＿＿＿＿＿＿＿＿
+    </div>
+
+    <p style="margin:16px 0;font-size:0.86rem;">鉴于甲方承接2026年名古屋亚洲运动会期间中央电视台（CCTV）报道团队的专属接送业务，为明确双方的权利与义务，根据相关法律法规，经双方协商一致，签订本协议。</p>
+
+    <div class="article-title">第1条 服务内容</div>
+    <div class="article-content">
+      <p>甲方委托乙方在2026年名古屋亚洲运动会期间，为中央电视台（CCTV）报道团队提供专属接送服务。</p>
+      <p>乙方应按照甲方的工作安排，完成媒体团队的接送、待命、路线调整、场馆往返及其他与本项目相关的工作。</p>
+    </div>
+
+    <div class="article-title">第2条 服务期间</div>
+    <div class="article-content">
+      <p>2026年9月16日至2026年10月5日。</p>
+      <p>服务期间共计20天。</p>
+    </div>
+
+    <div class="article-title">第3条 服务费用</div>
+    <div class="article-content">
+      <p>1. 服务报酬：25,000日元（含税）/天（10小时，含餐费）。</p>
+      <p>2. 交通补助：30,000日元（含税），于项目结束后一次性支付。</p>
+      <p>3. 加班费：3,000日元（含税）/小时。</p>
+      <p>4. 加班时间以现场记录及中央电视台记者签字确认的时间为准。</p>
+      <p>5. 车辆由主办方统一提供。</p>
+      <p>6. 住宿由主办方统一提供。</p>
+      <p>7. 工作期间产生的加油费、停车费等现场费用，根据甲方规定的方式进行结算。</p>
+    </div>
+
+    <div class="article-title">第4条 支付方式</div>
+    <div class="article-content">
+      <p>甲方应在项目结束后，根据乙方的实际出勤天数及加班时间核算报酬，并于次月月底前完成支付。</p>
+    </div>
+
+    <div class="article-title">第5条 固定司机制度</div>
+    <div class="article-content">
+      <p>鉴于本项目属于大型国际体育赛事媒体保障项目，且乙方已办理亚运会场馆通行证及相关工作证件，因此：</p>
+      <p>1. 乙方必须于2026年9月16日至2026年10月5日期间全程参与本项目。</p>
+      <p>2. 乙方不得以任何理由要求他人代替自己执行本项目。</p>
+      <p>3. 未经甲方书面同意，乙方不得擅自安排第三方代班。</p>
+      <p>4. 乙方应充分了解，本项目属于中央电视台的连续性采访保障业务，司机一经确定，原则上不得进行更换。</p>
+    </div>
+
+    <div class="article-title">第6条 缺勤及违约责任</div>
+    <div class="article-content">
+      <p>出现以下任何一种情形，甲方有权立即终止乙方后续全部工作，并不支付相应报酬：</p>
+      <p style="margin-left:12px;">1. 请假；2. 缺勤；3. 无法继续履行工作；4. 无故迟到；5. 擅自离岗；6. 拒绝执行工作安排；7. 被客户严重投诉；8. 严重违反本协议约定。</p>
+      <p>如因乙方原因导致中央电视台投诉、采访计划延误、比赛报道受到影响或甲方遭受经济损失的，乙方应承担相应赔偿责任。</p>
+      <p>乙方不得以疾病、家庭原因、个人事务、交通原因或其他任何理由主张免责。</p>
+    </div>
+
+    <div class="article-title">第7条 工作纪律</div>
+    <div class="article-content">
+      <p class="sub-title">（一）仪容仪表</p>
+      <p>1. 穿着纯色短袖衬衣或短袖POLO衫。</p>
+      <p>2. 不得穿着带有明显图案的服装。</p>
+      <p>3. 必须佩戴KINOKO公司胸章。</p>
+      <p>4. 工作结束后归还胸章。</p>
+      <p>5. 必须穿着皮鞋。</p>
+      <p>6. 严禁穿拖鞋或凉鞋。</p>
+      <p>7. 不得佩戴明显Logo的皮带或饰品。</p>
+      <p>8. 工作期间不得露出纹身。</p>
+      <p>9. 保持整洁、干净、专业的个人形象。</p>
+
+      <p class="sub-title">（二）证件携带</p>
+      <p>乙方必须随身携带：</p>
+      <p>1. 有效驾驶证；2. 亚运会工作证；3. 场馆通行证；4. 身份确认相关证件。</p>
+      <p>如现场需要进行身份核验，乙方必须及时出示相关证件。</p>
+
+      <p class="sub-title">（三）场馆通行证管理</p>
+      <p>乙方应妥善保管所有场馆通行证、工作证及其他身份识别文件。</p>
+      <p>乙方不得：1. 转借；2. 转让；3. 复制；4. 伪造；5. 交由第三方使用。</p>
+      <p>因证件遗失、损坏、违规使用或管理不当导致无法进入场馆的，相关责任由乙方自行承担。</p>
+
+      <p class="sub-title">（四）车辆管理</p>
+      <p>未经甲方书面同意，乙方不得：1. 擅自更换车辆；2. 调整车辆配置；3. 使用其他车辆执行任务。</p>
+
+      <p class="sub-title">（五）联络及通讯</p>
+      <p>1. 工作期间必须保持手机畅通。</p>
+      <p>2. 手机必须保持足够电量。</p>
+      <p>3. 必须及时查看工作群信息。</p>
+      <p>4. 如发生任何问题、突发情况、路线变更或其他无法自行判断的情况，必须第一时间向甲方报告。</p>
+
+      <p class="sub-title">（六）每日工作记录</p>
+      <p>乙方必须按照甲方要求填写每日工作记录。工作结束后，必须由乘车记者本人签字确认。</p>
+      <p>乙方应确认：1. 姓名是否正确；2. 字迹是否清晰；3. 是否能够确认签字人的身份。</p>
+
+      <p class="sub-title">（七）薪资及内部信息保密</p>
+      <p>乙方不得：1. 与任何人讨论工资、报酬及待遇；2. 向第三方透露公司内部管理信息；3. 向第三方透露人员安排及业务合作信息。</p>
+      <p>如有人主动询问，应礼貌拒绝，并立即向甲方报告。</p>
+
+      <p class="sub-title">（八）严禁发布工作照片及信息</p>
+      <p>在亚运会结束之前，乙方不得通过任何方式发布：工作照片、工作视频、车辆照片、记者照片、比赛相关照片、工作现场照片、工作证件照片、后台及其他工作场景照片。</p>
+      <p>上述规定适用于微信、小红书、抖音、Instagram、Facebook、X（Twitter）、YouTube、TikTok及其他任何网络平台。</p>
+
+      <p class="sub-title">（九）严禁拍摄采访资料</p>
+      <p>乙方不得拍摄、录音、录像、复制、保存或传播任何与采访工作相关的资料。</p>
+      <p>包括但不限于：采访画面、采访文件、比赛资料、工作文件、未公开信息、记者及工作人员信息。</p>
+
+      <p class="sub-title">（十）禁止传播敏感信息</p>
+      <p>乙方不得传播：1. 中国队相关的未经授权信息；2. 中央电视台相关信息；3. 所谓的内部消息；4. 未经官方确认的信息；5. 丑闻或负面消息。</p>
+
+      <p class="sub-title">（十一）禁止接受媒体采访</p>
+      <p>未经甲方书面授权，乙方不得：1. 接受媒体采访；2. 发表与本项目相关的意见；3. 代表甲方发言；4. 代表中央电视台（CCTV）发言。</p>
+
+      <p class="sub-title">（十二）临时调度</p>
+      <p>由于体育赛事存在临时采访、比赛延期、场馆调整等情况，在不违反法律规定及合理工作时间安排的前提下，乙方不得无故拒绝甲方的临时调度、路线调整、时间调整或其他合理工作安排。</p>
+
+      <p class="sub-title">（十三）驻场管理</p>
+      <p>本项目属于连续性驻场保障项目。在协议履行期间，乙方不得擅自离开名古屋地区。</p>
+      <p>乙方不得安排：1. 个人旅行；2. 兼职工作；3. 其他可能影响正常工作的活动。</p>
+    </div>
+
+    <div class="article-title">第8条 交通事故及重大违法行为</div>
+    <div class="article-content">
+      <p>出现以下情形时，甲方有权立即终止合作，并不支付相应报酬：</p>
+      <p style="margin-left:12px;">1. 酒后驾驶；2. 醉酒驾驶；3. 吸毒；4. 使用违禁药物；5. 无证驾驶；6. 驾驶证被暂扣或吊销期间驾驶车辆；7. 虚假报告事故；8. 隐瞒事故；9. 擅自离开事故现场；10. 违反甲方指示并造成重大事故。</p>
+      <p>甲方保留追究乙方责任及要求赔偿损失的权利。</p>
+    </div>
+
+    <div class="article-title">第9条 其他事项</div>
+    <div class="article-content">
+      <p>本协议未尽事宜，由双方协商解决。</p>
+    </div>
+
+    <div class="article-title">第10条 协议生效</div>
+    <div class="article-content">
+      <p>本协议一式两份，甲乙双方各执一份，自双方签字或盖章之日起生效。</p>
+    </div>
+
+    <div class="sign-block">
+      <p><strong>甲方：</strong>木の子交通株式会社（Kinoko Club Concierge）<br>
+      代表签字：李嘉琦（已签署）<br>
+      日期：2026年8月19日</p>
+      <br>
+      <p><strong>乙方（司机）：</strong><br>
+      签字：＿＿＿＿＿＿＿＿＿＿<br>
+      日期：2026年　　月　　日</p>
+    </div>
+  </div>
+
+  <div class="agree-row">
+    <input type="checkbox" id="agree-check">
+    <label for="agree-check">我已仔细阅读并同意以上全部条款 <span class="required">*</span></label>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-primary" id="btn-to-step2" onclick="goToStep(2)" disabled>下一步：签名确认 →</button>
+  </div>
+</div>
+
+<!-- Step 2: 签名 -->
+<div id="step-2" class="card hidden">
+  <h3 class="section-title" style="margin-top:0">签名确认</h3>
+  <p style="font-size:0.85rem;color:#7a6f6a;margin-bottom:16px">请完成乙方签名。甲方已签署盖章。</p>
+
+  <div class="sign-section">
+    <!-- 甲方 -->
+    <div class="sign-party">
+      <h4>甲方</h4>
+      <div class="party-name">木の子交通株式会社</div>
+      <label class="field-label" style="margin-bottom:8px">代表签名</label>
+      <div style="border:1px solid var(--color-border);border-radius:8px;padding:8px;background:#fff;text-align:center;"><img src="https://kinoko-club-concierge.github.io/cola-pages/assets/signature-li.png" style="max-width:140px;max-height:80px;object-fit:contain;" alt="李嘉琦签名"></div>
+      <label class="field-label" style="margin-top:14px;margin-bottom:8px">电子章</label>
+      <div style="border:1px solid var(--color-border);border-radius:8px;padding:8px;background:#fff;text-align:center;"><img src="https://kinoko-club-concierge.github.io/cola-pages/assets/stamp-kinoko.png" style="max-width:100px;max-height:100px;object-fit:contain;" alt="木の子交通公章"></div>
+    </div>
+
+    <!-- 乙方 -->
+    <div class="sign-party" style="background:#fff;border-color:var(--color-primary);">
+      <h4>乙方（司机）</h4>
+      <div class="party-name">个人签署</div>
+
+      <div class="field-group" style="margin-bottom:12px">
+        <label class="field-label">姓名 <span class="required">*</span></label>
+        <input type="text" id="signer-name" placeholder="请输入您的姓名" style="border:1px solid var(--color-border);border-radius:8px;padding:10px 14px;font-size:16px;font-family:var(--font-body);width:100%;background:#fafaf9;">
+      </div>
+
+      <div class="field-group" style="margin-bottom:14px">
+        <label class="field-label">邮箱地址 <span class="required">*</span></label>
+        <input type="email" id="signer-email" placeholder="example@email.com" style="border:1px solid var(--color-border);border-radius:8px;padding:10px 14px;font-size:16px;font-family:var(--font-body);width:100%;background:#fafaf9;">
+      </div>
+
+      <label class="field-label">手写签名 <span class="required">*</span></label>
+      <div class="sig-wrapper" id="sig-wrapper">
+        <canvas id="sig-canvas"></canvas>
+      </div>
+      <button class="sig-clear" onclick="clearSig()">清除重签</button>
+    </div>
+  </div>
+
+  <div class="sign-date-display" style="text-align:center;margin-top:16px;">
+    签署日期：<strong id="sign-date-text"></strong>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-secondary" onclick="goToStep(1)">← 返回阅读合同</button>
+    <button class="btn-primary" id="btn-submit" onclick="submitForm()">确认签署 ✓</button>
+  </div>
+</div>
+
+<!-- 完成 -->
+<div id="step-success" class="card hidden success-card">
+  <div class="success-icon">✓</div>
+  <h3>签署完成</h3>
+  <p>协议已签署完成。<br>PDF 文件已发送至甲方（Kinoko Club Concierge）留档。<br>感谢您的配合！</p>
+  <div id="pdf-download-area" style="margin-top:20px"></div>
+</div>
+
+</div>
+
+<footer class="site-footer">
+  <img src="https://raw.githubusercontent.com/kinoko-club-concierge/flowchart/gh-pages/logo.png" alt="Kinoko Club Concierge" style="width:100px;height:auto;margin-bottom:10px"><br>
+  <div class="footer-info">
+    Kinoko Club Concierge<br>
+    〒104-0045 東京都中央区築地１丁目１３−１０ サクセス銀座東ビル 6F<br>
+    <a href="http://kinoko-group.co.jp" target="_blank">kinoko-group.co.jp</a>
+  </div>
+  <div class="footer-copy">© 2026 Kinoko Club Concierge All rights reserved.</div>
+</footer>
+
+<!-- Loading overlay -->
+<div class="loading-overlay hidden" id="loading">
+  <div class="spinner"></div>
+  <p id="loading-text">处理中...</p>
+</div>
+
+<script>
+var signaturePad, canvas, sigWrapper;
+
+document.addEventListener('DOMContentLoaded', function() {
+  sigWrapper = document.getElementById('sig-wrapper');
+  canvas = document.getElementById('sig-canvas');
+
+  var today = new Date().toISOString().split('T')[0];
+  document.getElementById('sign-date-text').textContent = today;
+
+  document.getElementById('agree-check').addEventListener('change', function(e) {
+    document.getElementById('btn-to-step2').disabled = !e.target.checked;
+  });
+});
+
+function initSignaturePad() {
+  var rect = sigWrapper.getBoundingClientRect();
+  var ratio = Math.max(window.devicePixelRatio || 1, 1);
+  canvas.width = rect.width * ratio;
+  canvas.height = (rect.height || 180) * ratio;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = (rect.height || 180) + 'px';
+  canvas.getContext('2d').scale(ratio, ratio);
+
+  var oldData = signaturePad ? signaturePad.toData() : null;
+  signaturePad = new SignaturePad(canvas, {
+    backgroundColor: 'rgb(255, 255, 255)',
+    penColor: 'rgb(20, 20, 20)',
+    minWidth: 1.5,
+    maxWidth: 3
+  });
+  if (oldData && oldData.length) {
+    signaturePad.fromData(oldData);
+  }
+}
+
+function clearSig() {
+  signaturePad.clear();
+}
+
+function updateDots(s) {
+  for (var i = 1; i <= 2; i++) {
+    var d = document.getElementById('sd' + i);
+    d.className = 'step-dot ' + (i < s ? 'completed' : i === s ? 'active' : 'inactive');
+  }
+}
+
+function goToStep(n) {
+  if (n === 2 && !document.getElementById('agree-check').checked) return;
+  document.querySelectorAll('.card').forEach(function(c) { c.classList.add('hidden'); });
+  document.getElementById('step-' + n).classList.remove('hidden');
+  updateDots(n);
+  window.scrollTo(0, 0);
+  if (n === 2) setTimeout(function() { initSignaturePad(); window.addEventListener('resize', initSignaturePad); }, 150);
+}
+
+async function generatePDF(signDate, sigDataUrl, signerName) {
+  var PDFLib = window.PDFLib;
+  if (!PDFLib) { throw new Error('PDF库加载失败，请刷新页面后重试'); }
+
+  var templateUrl = 'https://kinoko-club-concierge.github.io/cola-pages/asian-games-driver-individual/contract-template.pdf';
+  var templateBytes = await fetch(templateUrl).then(function(r) { return r.arrayBuffer(); });
+  var pdfDoc = await PDFLib.PDFDocument.load(templateBytes);
+
+  var pages = pdfDoc.getPages();
+  var lastPage = pages[pages.length - 1];
+
+  // Embed Party B signature
+  if (sigDataUrl) {
+    var sigBytes = Uint8Array.from(atob(sigDataUrl.split(',')[1]), function(c) { return c.charCodeAt(0); });
+    var sigImage = await pdfDoc.embedPng(sigBytes);
+    lastPage.drawImage(sigImage, {
+      x: 85,
+      y: 515,
+      width: 120,
+      height: 50
+    });
+  }
+
+  var pdfBytes = await pdfDoc.save();
+  return pdfBytes;
+}
+
+async function sendEmail(pdfBase64, signDate, signerName, signerEmail) {
+  var resp = await fetch('https://cola-dispatch.marswave-543.workers.dev/app-71d18b/api/send-email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pdfBase64: pdfBase64, signerName: signerName, signerEmail: signerEmail, signDate: signDate })
+  });
+  if (!resp.ok) {
+    var err = await resp.json().catch(function() { return {error:'unknown'}; });
+    throw new Error(err.error || 'Email send failed');
+  }
+  return await resp.json();
+}
+
+async function submitForm() {
+  var signerName = document.getElementById('signer-name').value.trim();
+  var signerEmail = document.getElementById('signer-email').value.trim();
+  if (!signerName) { alert('请输入您的姓名'); return; }
+  if (!signerEmail || !signerEmail.includes('@')) { alert('请输入有效的邮箱地址'); return; }
+  if (signaturePad.isEmpty()) { alert('请先手写签名'); return; }
+
+  var btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+  btn.textContent = '处理中...';
+
+  var loading = document.getElementById('loading');
+  loading.classList.remove('hidden');
+  document.getElementById('loading-text').textContent = 'PDF 生成中...';
+
+  try {
+    var signDate = document.getElementById('sign-date-text').textContent;
+
+    // Export signature with transparent background
+    var sigData = signaturePad.toData();
+    signaturePad.clear();
+    var origBg = signaturePad.backgroundColor;
+    signaturePad.backgroundColor = 'rgba(0,0,0,0)';
+    signaturePad.fromData(sigData);
+    var sigDataUrl = signaturePad.toDataURL('image/png');
+    // Restore white background for display
+    signaturePad.clear();
+    signaturePad.backgroundColor = origBg;
+    signaturePad.fromData(sigData);
+
+    // Generate PDF
+    var pdfBytes = await generatePDF(signDate, sigDataUrl, signerName);
+    var pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+    var pdfBase64 = '';
+    var bytes = new Uint8Array(pdfBytes);
+    var chunkSize = 8192;
+    for (var i = 0; i < bytes.length; i += chunkSize) {
+      pdfBase64 += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+    }
+    pdfBase64 = btoa(pdfBase64);
+
+    // Send email
+    document.getElementById('loading-text').textContent = '邮件发送中...';
+    try {
+      await sendEmail(pdfBase64, signDate, signerName, signerEmail);
+    } catch(emailErr) {
+      console.error('Email error:', emailErr);
+    }
+
+    // Show success
+    loading.classList.add('hidden');
+    document.getElementById('step-2').classList.add('hidden');
+    document.getElementById('step-success').classList.remove('hidden');
+    updateDots(2);
+    document.getElementById('sd2').className = 'step-dot completed';
+
+    var pdfUrl = URL.createObjectURL(pdfBlob);
+    document.getElementById('pdf-download-area').innerHTML =
+      '<a href="' + pdfUrl + '" download="司机服务协议_' + signerName + '_' + signDate + '.pdf" ' +
+      'style="display:inline-block;background:#8B6914;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:500;">' +
+      '下载协议 PDF</a>';
+
+  } catch(err) {
+    loading.classList.add('hidden');
+    alert('提交失败: ' + err.message);
+    btn.disabled = false;
+    btn.textContent = '确认签署 ✓';
+  }
+}
+</script>
+</body>
+</html>
