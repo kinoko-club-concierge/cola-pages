@@ -559,7 +559,7 @@ label.field-label {
 <!-- Step 2: 签名盖章 -->
 <div id="step-2" class="card hidden">
   <h3 class="section-title" style="margin-top:0">签名盖章</h3>
-  <p style="font-size:0.85rem;color:#7a6f6a;margin-bottom:16px">请完成乙方代表签名及公章上传。甲方已签署盖章。</p>
+  <p style="font-size:0.85rem;color:#7a6f6a;margin-bottom:16px">请完成乙方代表签名。甲方已签署盖章。</p>
 
   <div class="sign-section">
     <!-- 甲方 - 占位 -->
@@ -593,16 +593,7 @@ label.field-label {
       </div>
       <button class="sig-clear" onclick="clearSig()">清除重签</button>
 
-      <label class="field-label" style="margin-top:16px;">公章上传 <span class="required">*</span></label>
-      <div class="stamp-upload-area" id="stamp-area" onclick="document.getElementById('stamp-input').click()">
-        <div class="upload-hint" id="stamp-hint">
-          <span>📎</span>
-          点击上传公章图片<br>(PNG/JPG)
-        </div>
-        <img id="stamp-preview" class="hidden" alt="公章预览">
-      </div>
-      <input type="file" id="stamp-input" accept="image/*" style="display:none" onchange="handleStampUpload(event)">
-      <button class="stamp-remove hidden" id="stamp-remove-btn" onclick="removeStamp(event)">移除公章</button>
+      <!-- 公章上传已移除，乙方无电子章 -->
     </div>
   </div>
 
@@ -819,23 +810,7 @@ async function generatePDF(signDate, sigDataUrl, stampDataUrl, signerName) {
     });
   }
 
-  // Embed Party B stamp image
-  if (stampDataUrl) {
-    var stampBytes = Uint8Array.from(atob(stampDataUrl.split(',')[1]), function(c) { return c.charCodeAt(0); });
-    var stampImage;
-    if (stampDataUrl.indexOf('image/png') > -1) {
-      stampImage = await pdfDoc.embedPng(stampBytes);
-    } else {
-      stampImage = await pdfDoc.embedJpg(stampBytes);
-    }
-    // Position: Party B stamp area
-    lastPage.drawImage(stampImage, {
-      x: 340,
-      y: pageHeight - 570,
-      width: 70,
-      height: 70
-    });
-  }
+  // Party B stamp removed (乙方无电子章)
 
   // Add Party B signer name and date as text
   var font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
@@ -877,7 +852,7 @@ async function submitForm() {
   if (!signerName) { alert('请输入签名人姓名'); return; }
   if (!signerEmail || !signerEmail.includes('@')) { alert('请输入有效的邮箱地址'); return; }
   if (signaturePad.isEmpty()) { alert('请先手写签名'); return; }
-  if (!stampDataUrl) { alert('请上传公章图片'); return; }
+  // stamp not required
 
   var btn = document.getElementById('btn-submit');
   btn.disabled = true;
