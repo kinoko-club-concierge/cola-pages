@@ -8,7 +8,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 <style>
 :root {
@@ -791,127 +790,99 @@ function getContractText() {
 }
 
 function generatePDF(signDate, sigDataUrl, stampUrl, signerName) {
-  // This function now returns a Promise that uses html2canvas
-  return new Promise(async function(resolve, reject) {
+  if (!window.jspdf || !window.jspdf.jsPDF) { throw new Error('PDF库加载失败，请刷新页面后重试'); }
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF('p', 'mm', 'a4');
+  var pageW = 210;
+  var margin = 20;
+  var y = 30;
+
+  // Title
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Contract Signing Confirmation', pageW / 2, y, { align: 'center' });
+  y += 8;
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text('2026 Nagoya Asian Games - Driver Dispatch Service Contract', pageW / 2, y, { align: 'center' });
+  y += 12;
+
+  // Divider
+  doc.setDrawColor(139, 105, 20);
+  doc.setLineWidth(0.5);
+  doc.line(margin, y, pageW - margin, y);
+  y += 12;
+
+  // Contract info
+  doc.setFontSize(9);
+  doc.text('Party A: Kinoko Club Concierge', margin, y); y += 6;
+  doc.text('Party B: Huating Shoji Co., Ltd.', margin, y); y += 6;
+  doc.text('Contract Period: 2026/09/16 - 2026/10/05', margin, y); y += 6;
+  doc.text('Drivers: 7 persons', margin, y); y += 12;
+
+  // Party A signature
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Party A Representative:', margin, y); y += 6;
+  doc.setFont('helvetica', 'normal');
+  doc.text('Li Jiaqi', margin, y); y += 4;
+
+  // Party A signature image
+  try {
+    var partyAImgs = document.querySelectorAll('.sign-party img');
+    if (partyAImgs[0]) doc.addImage(partyAImgs[0].src, 'PNG', margin, y, 45, 22);
+  } catch(e) {}
+  y += 26;
+
+  // Party A stamp
+  doc.text('Company Seal:', margin, y); y += 4;
+  try {
+    var partyAImgs = document.querySelectorAll('.sign-party img');
+    if (partyAImgs[1]) doc.addImage(partyAImgs[1].src, 'PNG', margin, y, 25, 25);
+  } catch(e) {}
+  y += 28;
+  doc.text('Date: 2026-08-18', margin, y); y += 14;
+
+  // Divider
+  doc.line(margin, y, pageW - margin, y);
+  y += 12;
+
+  // Party B signature
+  doc.setFont('helvetica', 'bold');
+  doc.text('Party B Representative:', margin, y); y += 6;
+  doc.setFont('helvetica', 'normal');
+  doc.text(signerName, margin, y); y += 4;
+
+  // Party B signature image
+  try {
+    doc.addImage(sigDataUrl, 'PNG', margin, y, 50, 25);
+  } catch(e) {}
+  y += 28;
+
+  // Party B stamp
+  doc.text('Company Seal:', margin, y); y += 4;
+  if (stampUrl) {
     try {
-      if (!window.jspdf || !window.jspdf.jsPDF) { reject(new Error('PDF库加载失败，请刷新页面后重试')); return; }
-      var jsPDF = window.jspdf.jsPDF;
-      
-      // Clone the contract content for rendering
-      var contractEl = document.getElementById('contract-content');
-      var clone = contractEl.cloneNode(true);
-      clone.style.maxHeight = 'none';
-      clone.style.overflow = 'visible';
-      clone.style.position = 'absolute';
-      clone.style.left = '-9999px';
-      clone.style.width = '700px';
-      clone.style.padding = '40px';
-      clone.style.background = '#fff';
-      document.body.appendChild(clone);
+      doc.addImage(stampUrl, 'PNG', margin, y, 30, 30);
+    } catch(e) {}
+    y += 33;
+  }
+  doc.text('Date: ' + signDate, margin, y); y += 14;
 
-      // Render contract to canvas
-      var canvas = await html2canvas(clone, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff'
-      });
-      document.body.removeChild(clone);
+  // Divider
+  doc.line(margin, y, pageW - margin, y);
+  y += 10;
 
-      var imgData = canvas.toDataURL('image/jpeg', 0.85);
-      var doc = new jsPDF('p', 'mm', 'a4');
-      var pageW = 210;
-      var pageH = 297;
-      var margin = 10;
-      var contentW = pageW - margin * 2;
-      
-      // Calculate how many pages we need
-      var imgW = canvas.width;
-      var imgH = canvas.height;
-      var ratio = contentW / imgW;
-      var scaledH = imgH * ratio;
-      var pageContentH = pageH - margin * 2;
-      var totalPages = Math.ceil(scaledH / pageContentH);
-      
-      // Split image across pages
-      for (var p = 0; p < totalPages; p++) {
-        if (p > 0) doc.addPage();
-        var srcY = p * (pageContentH / ratio);
-        var srcH = Math.min(pageContentH / ratio, imgH - srcY);
-        
-        // Create a temp canvas for this page slice
-        var tempCanvas = document.createElement('canvas');
-        tempCanvas.width = imgW;
-        tempCanvas.height = Math.round(srcH);
-        var ctx = tempCanvas.getContext('2d');
-        ctx.drawImage(canvas, 0, Math.round(srcY), imgW, Math.round(srcH), 0, 0, imgW, Math.round(srcH));
-        var sliceData = tempCanvas.toDataURL('image/jpeg', 0.85);
-        var sliceH = srcH * ratio;
-        doc.addImage(sliceData, 'JPEG', margin, margin, contentW, sliceH);
-      }
+  // Footer
+  doc.setFontSize(8);
+  doc.setTextColor(120);
+  doc.text('This document confirms that both parties have signed the Driver Dispatch Service Contract', pageW / 2, y, { align: 'center' });
+  y += 5;
+  doc.text('for the 2026 Nagoya Asian Games. Full contract text available at the signing URL.', pageW / 2, y, { align: 'center' });
+  y += 5;
+  doc.text('Signed at: ' + new Date().toISOString(), pageW / 2, y, { align: 'center' });
 
-      // Add signature page
-      doc.addPage();
-      var y = 25;
-      doc.setDrawColor(139, 105, 20);
-      doc.setLineWidth(0.5);
-      doc.line(margin, y, pageW - margin, y);
-      y += 15;
-
-      // Signature page - render the sign section as-is
-      var signSection = document.querySelector('.sign-section');
-      var signClone = signSection.cloneNode(true);
-      signClone.style.position = 'absolute';
-      signClone.style.left = '-9999px';
-      signClone.style.width = '700px';
-      signClone.style.padding = '20px';
-      signClone.style.background = '#fff';
-      // Add the signature and stamp to clone
-      var partyBSig = signClone.querySelectorAll('.sign-party')[1];
-      if (partyBSig) {
-        var sigImg = partyBSig.querySelector('.sig-wrapper');
-        if (sigImg) { sigImg.innerHTML = '<img src="' + sigDataUrl + '" style="width:100%;height:100%;object-fit:contain;">'; }
-      }
-      // Add title
-      var titleEl = document.createElement('h2');
-      titleEl.textContent = '签署栏';
-      titleEl.style.textAlign = 'center';
-      titleEl.style.color = '#6B5010';
-      titleEl.style.marginBottom = '16px';
-      var wrapper = document.createElement('div');
-      wrapper.style.background = '#fff';
-      wrapper.style.padding = '20px';
-      wrapper.appendChild(titleEl);
-      // Add signer info
-      var infoEl = document.createElement('p');
-      infoEl.innerHTML = '<strong>乙方代表：</strong>' + signerName + '　　<strong>签署日期：</strong>' + signDate;
-      infoEl.style.textAlign = 'center';
-      infoEl.style.marginBottom = '16px';
-      wrapper.appendChild(infoEl);
-      wrapper.appendChild(signClone);
-      wrapper.style.position = 'absolute';
-      wrapper.style.left = '-9999px';
-      wrapper.style.width = '700px';
-      document.body.appendChild(wrapper);
-
-      var sigCanvas = await html2canvas(wrapper, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff'
-      });
-      document.body.removeChild(wrapper);
-
-      var sigImgData = sigCanvas.toDataURL('image/jpeg', 0.9);
-      var sigRatio = contentW / sigCanvas.width;
-      var sigH = sigCanvas.height * sigRatio;
-      doc.addImage(sigImgData, 'JPEG', margin, y, contentW, Math.min(sigH, pageContentH - y));
-
-      resolve(doc);
-    } catch(e) {
-      reject(e);
-    }
-  });
+  return doc;
 }
 
 async function sendEmail(pdfBase64, signDate, signerName, signerEmail) {
@@ -977,7 +948,7 @@ async function submitForm() {
     var sigDataUrl = signaturePad.toDataURL('image/png');
 
     // Generate PDF
-    var doc = await generatePDF(signDate, sigDataUrl, stampDataUrl, signerName);
+    var doc = generatePDF(signDate, sigDataUrl, stampDataUrl, signerName);
     var pdfBlob = doc.output('blob');
     var pdfBase64 = doc.output('datauristring').split(',')[1];
 
