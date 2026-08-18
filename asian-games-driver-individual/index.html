@@ -612,6 +612,10 @@ async function generatePDF(signDate, sigDataUrl, signerName, signerAddress, sign
   var phoneImg = await pdfDoc.embedPng(renderText(signerPhone, 300));
   firstPage.drawImage(phoneImg, { x: 140, y: 430, width: 150, height: 16 });
 
+  // Embed Party B name text on last page signing area
+  var nameLastImg = await pdfDoc.embedPng(renderText(signerName, 300));
+  lastPage.drawImage(nameLastImg, { x: 85, y: 495, width: 120, height: 14 });
+
   // Embed Party B signature on last page
   if (sigDataUrl) {
     var sigBytes = Uint8Array.from(atob(sigDataUrl.split(',')[1]), function(c) { return c.charCodeAt(0); });
