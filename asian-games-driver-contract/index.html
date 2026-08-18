@@ -638,7 +638,7 @@ function initSignaturePad() {
 
   var oldData = signaturePad ? signaturePad.toData() : null;
   signaturePad = new SignaturePad(canvas, {
-    backgroundColor: 'rgba(0, 0, 0, 0)',
+    backgroundColor: 'rgb(255, 255, 255)',
     penColor: 'rgb(20, 20, 20)',
     minWidth: 1.5,
     maxWidth: 3
@@ -836,7 +836,17 @@ async function submitForm() {
 
   try {
     var signDate = document.getElementById('sign-date-text').textContent;
+    // Export signature with transparent background
+    var sigData = signaturePad.toData();
+    signaturePad.clear();
+    var origBg = signaturePad.backgroundColor;
+    signaturePad.backgroundColor = 'rgba(0,0,0,0)';
+    signaturePad.fromData(sigData);
     var sigDataUrl = signaturePad.toDataURL('image/png');
+    // Restore white background for display
+    signaturePad.clear();
+    signaturePad.backgroundColor = origBg;
+    signaturePad.fromData(sigData);
 
     // Generate PDF using pdf-lib (overlay on template)
     var pdfBytes = await generatePDF(signDate, sigDataUrl, stampDataUrl, signerName);
