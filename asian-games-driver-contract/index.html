@@ -780,26 +780,14 @@ async function generatePDF(signDate, sigDataUrl, stampDataUrl, signerName) {
     var sigImage = await pdfDoc.embedPng(sigBytes);
     // Position: after 乙方「签名：」 label (pdf-lib y=152 from bottom)
     lastPage.drawImage(sigImage, {
-      x: 110,
-      y: 110,
+      x: 85,
+      y: 125,
       width: 120,
       height: 50
     });
   }
 
-  // Render date as image with transparent background
-  var dateCanvas = document.createElement('canvas');
-  dateCanvas.width = 300;
-  dateCanvas.height = 40;
-  var dateCtx = dateCanvas.getContext('2d');
-  // Keep canvas transparent (don't fill background)
-  dateCtx.fillStyle = '#000';
-  dateCtx.font = '18px "Noto Sans SC", sans-serif';
-  dateCtx.fillText(signDate, 10, 26);
-  var dateBytes = Uint8Array.from(atob(dateCanvas.toDataURL('image/png').split(',')[1]), function(c) { return c.charCodeAt(0); });
-  var dateImage = await pdfDoc.embedPng(dateBytes);
-  // 日期 position (below signature)
-  lastPage.drawImage(dateImage, { x: 110, y: 62, width: 130, height: 18 });
+  // Date already in PDF template, no overlay needed
 
   var pdfBytes = await pdfDoc.save();
   return pdfBytes;
