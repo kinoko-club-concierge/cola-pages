@@ -778,31 +778,29 @@ async function generatePDF(signDate, sigDataUrl, stampDataUrl, signerName) {
   if (sigDataUrl) {
     var sigBytes = Uint8Array.from(atob(sigDataUrl.split(',')[1]), function(c) { return c.charCodeAt(0); });
     var sigImage = await pdfDoc.embedPng(sigBytes);
-    var sigDims = sigImage.scale(0.35);
-    // Position: Party B signature area (right column, below 乙方 header)
+    // Position: Party B signature area on last page (page 6)
+    // Y coordinate from bottom of page: ~630pt
     lastPage.drawImage(sigImage, {
-      x: 320,
-      y: pageHeight - 480,
-      width: Math.min(sigDims.width, 150),
-      height: Math.min(sigDims.height, 60)
+      x: 80,
+      y: 620,
+      width: 130,
+      height: 55
     });
   }
 
-  // Party B stamp removed (乙方无电子章)
-
   // Add Party B signer name and date as text
   var font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-  // Name
+  // Name next to 代表人 label
   lastPage.drawText(signerName, {
-    x: 370,
-    y: pageHeight - 410,
+    x: 120,
+    y: 710,
     size: 11,
     font: font
   });
-  // Date
+  // Date next to 日期 label
   lastPage.drawText(signDate, {
-    x: 370,
-    y: pageHeight - 610,
+    x: 100,
+    y: 580,
     size: 11,
     font: font
   });
