@@ -796,26 +796,32 @@ async function generatePDF(signDate, sigDataUrl, stampUrl, signerName) {
   if (!window.jspdf || !window.jspdf.jsPDF) { throw new Error('PDF库加载失败，请刷新页面后重试'); }
   var jsPDF = window.jspdf.jsPDF;
 
-  // Clone contract content for full rendering
+  // Temporarily expand contract-content to full height for screenshot
   var contractEl = document.getElementById('contract-content');
-  var clone = contractEl.cloneNode(true);
-  clone.style.maxHeight = 'none';
-  clone.style.overflow = 'visible';
-  clone.style.position = 'absolute';
-  clone.style.left = '-9999px';
-  clone.style.top = '0';
-  clone.style.width = '700px';
-  clone.style.padding = '40px';
-  clone.style.background = '#fff';
-  clone.style.fontSize = '13px';
-  clone.style.lineHeight = '1.8';
-  document.body.appendChild(clone);
+  var origMaxH = contractEl.style.maxHeight;
+  var origOverflow = contractEl.style.overflow;
+  contractEl.style.maxHeight = 'none';
+  contractEl.style.overflow = 'visible';
 
-  // Wait for fonts/images
-  await new Promise(function(r) { setTimeout(r, 500); });
+  // Scroll to top of contract
+  contractEl.scrollTop = 0;
+  await new Promise(function(r) { setTimeout(r, 300); });
 
-  var canvas = await html2canvas(clone, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
-  document.body.removeChild(clone);
+  // Screenshot the actual rendered contract element
+  var canvas = await html2canvas(contractEl, {
+    scale: 2,
+    useCORS: true,
+    allowTaint: true,
+    logging: false,
+    backgroundColor: '#ffffff',
+    windowWidth: 800,
+    width: contractEl.scrollWidth,
+    height: contractEl.scrollHeight
+  });
+
+  // Restore scroll container
+  contractEl.style.maxHeight = origMaxH;
+  contractEl.style.overflow = origOverflow;
 
   var doc = new jsPDF('p', 'mm', 'a4');
   var pageW = 210, pageH = 297, margin = 10;
@@ -837,26 +843,23 @@ async function generatePDF(signDate, sigDataUrl, stampUrl, signerName) {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, imgW, srcH);
     ctx.drawImage(canvas, 0, srcY, imgW, srcH, 0, 0, imgW, srcH);
-    var sliceData = tempCanvas.toDataURL('image/jpeg', 0.85);
+    var sliceData = tempCanvas.toDataURL('image/jpeg', 0.82);
     var sliceH = (srcH / 2) * ratio;
     doc.addImage(sliceData, 'JPEG', margin, margin, contentW, sliceH);
   }
 
-  // Signature page
-  doc.addPage();
+  // Signature page - screenshot the sign section directly
   var signSection = document.querySelector('.sign-section');
   if (signSection) {
-    var signClone = signSection.cloneNode(true);
-    var signWrapper = document.createElement('div');
-    signWrapper.style.cssText = 'position:absolute;left:-9999px;width:700px;padding:40px;background:#fff;font-size:13px;';
-    signWrapper.innerHTML = '<h2 style="text-align:center;color:#6B5010;margin-bottom:12px;font-size:18px;">签署栏</h2>' +
-      '<p style="text-align:center;color:#666;margin-bottom:20px;">乙方代表：' + signerName + ' | 签署日期：' + signDate + '</p>';
-    signWrapper.appendChild(signClone);
-    document.body.appendChild(signWrapper);
-    await new Promise(function(r) { setTimeout(r, 300); });
-    var sigCanvas = await html2canvas(signWrapper, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
-    document.body.removeChild(signWrapper);
-    var sigImgData = sigCanvas.toDataURL('image/jpeg', 0.85);
+    doc.addPage();
+    var sigCanvas = await html2canvas(signSection, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      backgroundColor: '#ffffff'
+    });
+    var sigImgData = sigCanvas.toDataURL('image/jpeg', 0.82);
     var sigRatio = contentW / (sigCanvas.width / 2);
     var sigH = (sigCanvas.height / 2) * sigRatio;
     doc.addImage(sigImgData, 'JPEG', margin, margin, contentW, Math.min(sigH, contentH));
