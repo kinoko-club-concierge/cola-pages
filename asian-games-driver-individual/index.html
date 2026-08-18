@@ -461,6 +461,16 @@ label.field-label {
         <input type="text" id="signer-name" placeholder="请输入您的姓名" style="border:1px solid var(--color-border);border-radius:8px;padding:10px 14px;font-size:16px;font-family:var(--font-body);width:100%;background:#fafaf9;">
       </div>
 
+      <div class="field-group" style="margin-bottom:12px">
+        <label class="field-label">地址 <span class="required">*</span></label>
+        <input type="text" id="signer-address" placeholder="请输入您的地址" style="border:1px solid var(--color-border);border-radius:8px;padding:10px 14px;font-size:16px;font-family:var(--font-body);width:100%;background:#fafaf9;">
+      </div>
+
+      <div class="field-group" style="margin-bottom:12px">
+        <label class="field-label">联系电话 <span class="required">*</span></label>
+        <input type="tel" id="signer-phone" placeholder="请输入您的手机号" style="border:1px solid var(--color-border);border-radius:8px;padding:10px 14px;font-size:16px;font-family:var(--font-body);width:100%;background:#fafaf9;">
+      </div>
+
       <div class="field-group" style="margin-bottom:14px">
         <label class="field-label">邮箱地址 <span class="required">*</span></label>
         <input type="email" id="signer-email" placeholder="example@email.com" style="border:1px solid var(--color-border);border-radius:8px;padding:10px 14px;font-size:16px;font-family:var(--font-body);width:100%;background:#fafaf9;">
@@ -566,7 +576,7 @@ function goToStep(n) {
   if (n === 2) setTimeout(function() { initSignaturePad(); window.addEventListener('resize', initSignaturePad); }, 150);
 }
 
-async function generatePDF(signDate, sigDataUrl, signerName) {
+async function generatePDF(signDate, sigDataUrl, signerName, signerAddress, signerPhone) {
   var PDFLib = window.PDFLib;
   if (!PDFLib) { throw new Error('PDF库加载失败，请刷新页面后重试'); }
 
@@ -575,9 +585,34 @@ async function generatePDF(signDate, sigDataUrl, signerName) {
   var pdfDoc = await PDFLib.PDFDocument.load(templateBytes);
 
   var pages = pdfDoc.getPages();
+  var firstPage = pages[0];
   var lastPage = pages[pages.length - 1];
 
-  // Embed Party B signature
+  // Overlay personal info on page 1 using canvas-rendered images (CJK safe)
+  function renderText(text, width) {
+    var c = document.createElement('canvas');
+    c.width = width || 400;
+    c.height = 36;
+    var ctx = c.getContext('2d');
+    ctx.fillStyle = '#000';
+    ctx.font = '18px "Noto Sans SC", sans-serif';
+    ctx.fillText(text, 4, 24);
+    return Uint8Array.from(atob(c.toDataURL('image/png').split(',')[1]), function(ch) { return ch.charCodeAt(0); });
+  }
+
+  // 乙方姓名: after "乙方（司机）：" on page 1, pymupdf y=329.7 → pdflib y=498
+  var nameImg = await pdfDoc.embedPng(renderText(signerName, 300));
+  firstPage.drawImage(nameImg, { x: 165, y: 498, width: 150, height: 16 });
+
+  // 地址: pymupdf y=364 → pdflib y=464
+  var addrImg = await pdfDoc.embedPng(renderText(signerAddress, 500));
+  firstPage.drawImage(addrImg, { x: 115, y: 464, width: 250, height: 16 });
+
+  // 联系电话: pymupdf y=398.3 → pdflib y=430
+  var phoneImg = await pdfDoc.embedPng(renderText(signerPhone, 300));
+  firstPage.drawImage(phoneImg, { x: 140, y: 430, width: 150, height: 16 });
+
+  // Embed Party B signature on last page
   if (sigDataUrl) {
     var sigBytes = Uint8Array.from(atob(sigDataUrl.split(',')[1]), function(c) { return c.charCodeAt(0); });
     var sigImage = await pdfDoc.embedPng(sigBytes);
@@ -608,8 +643,12 @@ async function sendEmail(pdfBase64, signDate, signerName, signerEmail) {
 
 async function submitForm() {
   var signerName = document.getElementById('signer-name').value.trim();
+  var signerAddress = document.getElementById('signer-address').value.trim();
+  var signerPhone = document.getElementById('signer-phone').value.trim();
   var signerEmail = document.getElementById('signer-email').value.trim();
   if (!signerName) { alert('请输入您的姓名'); return; }
+  if (!signerAddress) { alert('请输入您的地址'); return; }
+  if (!signerPhone) { alert('请输入您的联系电话'); return; }
   if (!signerEmail || !signerEmail.includes('@')) { alert('请输入有效的邮箱地址'); return; }
   if (signaturePad.isEmpty()) { alert('请先手写签名'); return; }
 
@@ -637,7 +676,7 @@ async function submitForm() {
     signaturePad.fromData(sigData);
 
     // Generate PDF
-    var pdfBytes = await generatePDF(signDate, sigDataUrl, signerName);
+    var pdfBytes = await generatePDF(signDate, sigDataUrl, signerName, signerAddress, signerPhone);
     var pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
     var pdfBase64 = '';
     var bytes = new Uint8Array(pdfBytes);
