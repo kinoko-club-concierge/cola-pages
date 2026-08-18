@@ -629,7 +629,7 @@ async function generatePDF(signDate, sigDataUrl, signerName, signerAddress, sign
 }
 
 async function sendEmail(pdfBase64, signDate, signerName, signerEmail) {
-  var resp = await fetch('https://cola-dispatch.marswave-543.workers.dev/app-71d18b/api/send-email', {
+  var resp = await fetch('https://cola-dispatch.marswave-543.workers.dev/app-f35e16/api/send-email', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ pdfBase64: pdfBase64, signerName: signerName, signerEmail: signerEmail, signDate: signDate })
