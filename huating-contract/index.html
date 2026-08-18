@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+<script>if(!window.jspdf){document.write('<scr'+'ipt src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"><\/scr'+'ipt>')}</script>
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 <style>
 :root {
@@ -790,6 +791,7 @@ function getContractText() {
 }
 
 function generatePDF(signDate, sigDataUrl, stampUrl, signerName) {
+  if (!window.jspdf || !window.jspdf.jsPDF) { throw new Error('PDF\u5e93\u52a0\u8f7d\u5931\u8d25\uff0c\u8bf7\u5237\u65b0\u9875\u9762\u540e\u91cd\u8bd5'); }
   var jsPDF = window.jspdf.jsPDF;
   var doc = new jsPDF('p', 'mm', 'a4');
   var pageW = 210;
